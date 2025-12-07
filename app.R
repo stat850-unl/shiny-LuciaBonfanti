@@ -4,11 +4,18 @@
 #
 # Find out more about building applications with Shiny here:
 #
-#    http://shiny.rstudio.com/
+#    https://shiny.posit.co/
 #
 
 library(shiny)
+library(readr)
+library(stringr)
+boston_cocktails <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2020/2020-05-26/boston_cocktails.csv') |>
+  mutate(ingredient = str_to_title(ingredient))
 
+ingredient_list <- boston_cocktails$ingredient |> 
+  unique() |>
+  sort()
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
@@ -18,16 +25,15 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+            selectInput("ingredient",
+                        "Choose",
+                        ingredient_list, 
+                        multiple = T)
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot")
+           tableOutput("drinks")
         )
     )
 )
@@ -35,15 +41,13 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
+    output$drinks <- renderTable({
+      print(input$ingredient)
+      join1<- boston_cocktails |>
+        filter(ingredient %in% input$ingredient) 
+      join2 <- boston_cocktails %>%
+        filter(name %in% join1$name)
+      join2
     })
 }
 
